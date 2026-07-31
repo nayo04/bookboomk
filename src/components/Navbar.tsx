@@ -42,27 +42,38 @@ export const Navbar: React.FC<NavbarProps> = ({
   const handleGoogleLogin = async () => {
     setIsLoggingIn(true);
     try {
-      await loginWithGoogle();
-      setImportNotice({
-        type: 'success',
-        text: 'Google 계정으로 성공적으로 로그인되었습니다.',
-      });
-      setTimeout(() => setImportNotice(null), 4000);
-    } catch (err: unknown) {
+      const loggedUser = await loginWithGoogle();
+      if (loggedUser) {
+        setImportNotice({
+          type: 'success',
+          text: 'Google 계정으로 성공적으로 로그인되었습니다.',
+        });
+        setTimeout(() => setImportNotice(null), 4000);
+      }
+    } catch (err: any) {
       console.error('Google login failed:', err);
       const errMsg = err instanceof Error ? err.message : String(err);
-      if (errMsg.includes('popup-closed-by-user') || errMsg.includes('cancelled')) {
+      const errCode = err?.code || '';
+
+      if (errCode === 'auth/unauthorized-domain' || errMsg.includes('unauthorized-domain')) {
         setImportNotice({
           type: 'error',
-          text: 'Google 로그인 창이 닫혔습니다.',
+          text: `[Firebase 도메인 승인 필요] Firebase 콘솔 -> Authentication -> 설정 -> 승인된 도메인에 '${window.location.hostname}'을 등록해야 합니다.`,
         });
+        setTimeout(() => setImportNotice(null), 10000);
+      } else if (errCode === 'auth/popup-closed-by-user' || errMsg.includes('popup-closed-by-user')) {
+        setImportNotice({
+          type: 'error',
+          text: 'Google 로그인 창이 닫혔습니다. 다시 시도해 주세요.',
+        });
+        setTimeout(() => setImportNotice(null), 4000);
       } else {
         setImportNotice({
           type: 'error',
-          text: 'Google 로그인 중 오류가 발생했습니다. 브라우저 팝업 차단을 확인해 주세요.',
+          text: 'Google 로그인 중 오류가 발생했습니다. 브라우저 팝업 차단 설정을 해제하거나 다시 시도해 주세요.',
         });
+        setTimeout(() => setImportNotice(null), 6000);
       }
-      setTimeout(() => setImportNotice(null), 5000);
     } finally {
       setIsLoggingIn(false);
     }

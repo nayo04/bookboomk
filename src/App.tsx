@@ -16,6 +16,7 @@ import {
   onAuthStateChanged,
   loginAnonymously,
   testFirestoreConnection,
+  handleAuthRedirectResult,
   User,
 } from './lib/firebase';
 import {
@@ -72,6 +73,9 @@ export default function App() {
   // Test Firestore Connection and initialize Firebase Auth
   useEffect(() => {
     testFirestoreConnection();
+    handleAuthRedirectResult().catch((err) => {
+      console.info('Redirect auth result check:', err);
+    });
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {

@@ -3,6 +3,8 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInAnonymously,
   signOut as firebaseSignOut,
   onAuthStateChanged,
@@ -22,6 +24,44 @@ export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 
 export const googleProvider = new GoogleAuthProvider();
+
+export async function loginWithGoogle() {
+  try {
+    // Try popup login first
+    const result = await signInWithPopup(auth, googleProvider);
+    return result.user;
+  } catch (err: any) {
+    console.error('Google popup login failed, evaluating fallback:', err);
+    
+    // If popup is blocked or unsupported (especially on mobile web), fallback to redirect login
+    if (
+      err?.code === 'auth/popup-blocked' ||
+      err?.code === 'auth/popup-closed-by-user' ||
+      err?.code === 'auth/cancelled-popup-request' ||
+      /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+    ) {
+      console.info('Attempting signInWithRedirect fallback for mobile/popup restriction...');
+      try {
+        await signInWithRedirect(auth, googleProvider);
+        return null; // Will redirect page
+      } catch (redirectErr) {
+        throw redirectErr;
+      }
+    }
+    
+    throw err;
+  }
+}
+
+export async function handleAuthRedirectResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    return result?.user || null;
+  } catch (err) {
+    console.error('Error handling auth redirect result:', err);
+    throw err;
+  }
+}
 
 export enum OperationType {
   CREATE = 'create',
@@ -81,16 +121,6 @@ export async function testFirestoreConnection() {
   } catch (error) {
     // Gracefully handle offline or network connection ping check
     console.info('Firestore connection note: operating in client state or checking connection.');
-  }
-}
-
-export async function loginWithGoogle() {
-  try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
-  } catch (err) {
-    console.error('Google login failed:', err);
-    throw err;
   }
 }
 
