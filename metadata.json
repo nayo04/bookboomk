@@ -1,0 +1,8 @@
+{
+  "name": "Remix 타임클립 - 유튜브 \u0026 트위터 미디어 북마크",
+  "description": "유튜브 특정 구간 재생 및 트위터 링크 저장, 시간대 코멘트, 태그/카테고리 검색과 드래그 앤 드롭 정렬을 지원하는 미디어 북마크 플래너",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
