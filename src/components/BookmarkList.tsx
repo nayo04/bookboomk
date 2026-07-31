@@ -23,7 +23,10 @@ import {
   CheckCircle2,
   LayoutGrid,
   List,
-  AlertTriangle
+  AlertTriangle,
+  ChevronUp,
+  ChevronDown,
+  Video
 } from 'lucide-react';
 
 interface BookmarkListProps {
@@ -81,26 +84,30 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
   const [tagSearchInput, setTagSearchInput] = useState<string>('');
   const [batchNotice, setBatchNotice] = useState<string | null>(null);
 
-  // Jump Modal State
+  // Jump, Swap & Reorder Manager State
   const [jumpBookmark, setJumpBookmark] = useState<MediaBookmark | null>(null);
   const [jumpInputPos, setJumpInputPos] = useState<string>('');
+  const [isReorderManagerOpen, setIsReorderManagerOpen] = useState(false);
+
+  const handleSwapPositions = (idxA: number, idxB: number) => {
+    if (idxA < 0 || idxA >= bookmarks.length || idxB < 0 || idxB >= bookmarks.length || idxA === idxB) return;
+    const newOrder = [...bookmarks];
+    const temp = newOrder[idxA];
+    newOrder[idxA] = newOrder[idxB];
+    newOrder[idxB] = temp;
+    onReorder(newOrder);
+  };
 
   const handleMoveUp = (id: string) => {
     const idx = bookmarks.findIndex((b) => b.id === id);
     if (idx <= 0) return;
-    const newOrder = [...bookmarks];
-    const [removed] = newOrder.splice(idx, 1);
-    newOrder.splice(idx - 1, 0, removed);
-    onReorder(newOrder);
+    handleSwapPositions(idx, idx - 1);
   };
 
   const handleMoveDown = (id: string) => {
     const idx = bookmarks.findIndex((b) => b.id === id);
     if (idx < 0 || idx >= bookmarks.length - 1) return;
-    const newOrder = [...bookmarks];
-    const [removed] = newOrder.splice(idx, 1);
-    newOrder.splice(idx + 1, 0, removed);
-    onReorder(newOrder);
+    handleSwapPositions(idx, idx + 1);
   };
 
   const handleMoveToTop = (id: string) => {
@@ -121,17 +128,21 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
     onReorder(newOrder);
   };
 
-  const handleExecuteJump = () => {
+  const handleExecuteJump = (mode: 'swap' | 'insert' = 'swap') => {
     if (!jumpBookmark) return;
     const targetNum = parseInt(jumpInputPos, 10);
     if (!isNaN(targetNum) && targetNum >= 1 && targetNum <= bookmarks.length) {
-      const idx = bookmarks.findIndex((b) => b.id === jumpBookmark.id);
-      if (idx >= 0) {
-        const clampedPos = targetNum - 1;
-        const newOrder = [...bookmarks];
-        const [removed] = newOrder.splice(idx, 1);
-        newOrder.splice(clampedPos, 0, removed);
-        onReorder(newOrder);
+      const currentIdx = bookmarks.findIndex((b) => b.id === jumpBookmark.id);
+      const targetIdx = targetNum - 1;
+      if (currentIdx >= 0 && targetIdx >= 0) {
+        if (mode === 'swap') {
+          handleSwapPositions(currentIdx, targetIdx);
+        } else {
+          const newOrder = [...bookmarks];
+          const [removed] = newOrder.splice(currentIdx, 1);
+          newOrder.splice(targetIdx, 0, removed);
+          onReorder(newOrder);
+        }
       }
     }
     setJumpBookmark(null);
@@ -653,19 +664,30 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
               <span>즐겨찾기</span>
             </button>
 
-            {/* Sorting Dropdown */}
-            <div className="flex items-center gap-1 shrink-0">
+            {/* Sorting Dropdown & Order Manager */}
+            <div className="flex items-center gap-1.5 shrink-0">
               <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
               <select
                 value={sortMode}
                 onChange={(e) => onSortModeChange(e.target.value as SortMode)}
                 className="px-2.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-slate-100"
               >
-                <option value="custom">✋ 순서 변경 (드래그)</option>
+                <option value="custom">✋ 사용자 순서 (스왑 & 이동)</option>
                 <option value="newest">🕒 최신 등록순</option>
                 <option value="oldest">⌛ 오래된순</option>
                 <option value="title">🔤 제목 순</option>
               </select>
+
+              {sortMode === 'custom' && (
+                <button
+                  onClick={() => setIsReorderManagerOpen(true)}
+                  className="flex items-center gap-1 px-2.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-sm shadow-indigo-600/20 cursor-pointer shrink-0"
+                  title="모든 북마크 순서를 리스트에서 한눈에 관리/스왑"
+                >
+                  <ArrowUpDown className="w-3.5 h-3.5" />
+                  <span>순서 정리</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -834,14 +856,7 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
           </button>
         </div>
       ) : (
-        <Reorder.Group
-          axis="y"
-          values={displayBookmarks}
-          onReorder={(newOrder) => {
-            if (isDragEnabled) {
-              onReorder(newOrder);
-            }
-          }}
+        <div
           className={
             layoutMode === 'grid'
               ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4.5'
@@ -869,71 +884,128 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
               onMoveDown={handleMoveDown}
               onMoveToTop={handleMoveToTop}
               onMoveToBottom={handleMoveToBottom}
+              onSwapPositions={handleSwapPositions}
               onOpenJumpModal={(bm) => {
                 setJumpBookmark(bm);
                 setJumpInputPos(String(index + 1));
               }}
             />
           ))}
-        </Reorder.Group>
+        </div>
       )}
 
-      {/* Jump To Position Modal */}
-      {jumpBookmark && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2">
-                <ArrowUpDown className="w-4 h-4 text-indigo-500" />
-                북마크 순서 직접 이동
-              </h3>
-              <button
-                onClick={() => setJumpBookmark(null)}
-                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      {/* Jump & Swap Position Modal */}
+      {jumpBookmark && (() => {
+        const currentIdx = bookmarks.findIndex((b) => b.id === jumpBookmark.id);
+        const targetNum = parseInt(jumpInputPos, 10);
+        const targetBm = !isNaN(targetNum) && targetNum >= 1 && targetNum <= bookmarks.length ? bookmarks[targetNum - 1] : null;
+        const topBm = bookmarks[0];
+        const bottomBm = bookmarks[bookmarks.length - 1];
 
-            <div className="space-y-1">
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-1">
-                {jumpBookmark.title}
-              </p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                현재 위치: <span className="font-extrabold text-indigo-600 dark:text-indigo-400">{bookmarks.findIndex((b) => b.id === jumpBookmark.id) + 1}번</span> (전체 {bookmarks.length}개)
-              </p>
-            </div>
+        return (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2">
+                  <ArrowUpDown className="w-4 h-4 text-indigo-500" />
+                  북마크 순서 변경 (스왑 & 이동)
+                </h3>
+                <button
+                  onClick={() => setJumpBookmark(null)}
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
-            {/* Quick Presets */}
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => {
-                  handleMoveToTop(jumpBookmark.id);
-                  setJumpBookmark(null);
-                }}
-                className="px-3 py-2 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold transition flex items-center justify-center gap-1 cursor-pointer"
-              >
-                🔝 맨 위로 (1번)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  handleMoveToBottom(jumpBookmark.id);
-                  setJumpBookmark(null);
-                }}
-                className="px-3 py-2 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold transition flex items-center justify-center gap-1 cursor-pointer"
-              >
-                🔚 맨 아래로 ({bookmarks.length}번)
-              </button>
-            </div>
+              {/* Source Video Info */}
+              <div className="p-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700/80 flex items-center gap-2.5">
+                {jumpBookmark.thumbnailUrl || (jumpBookmark.platform === 'youtube' && jumpBookmark.embedId) ? (
+                  <img
+                    src={
+                      jumpBookmark.thumbnailUrl ||
+                      `https://img.youtube.com/vi/${jumpBookmark.embedId}/hqdefault.jpg`
+                    }
+                    alt=""
+                    className="w-12 h-9 rounded-md object-cover border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-900"
+                  />
+                ) : (
+                  <div className="w-12 h-9 rounded-md bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
+                    <Video className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400">
+                      선택한 영상 (현재 <span className="text-indigo-600 dark:text-indigo-400 font-black">#{currentIdx + 1}번</span>)
+                    </span>
+                    <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                      jumpBookmark.platform === 'youtube'
+                        ? 'bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400'
+                        : 'bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400'
+                    }`}>
+                      {jumpBookmark.platform === 'youtube' ? 'YouTube' : 'Twitter'}
+                    </span>
+                    <span className="px-1.5 py-0.2 bg-slate-200/70 dark:bg-slate-700/70 text-slate-700 dark:text-slate-300 rounded text-[10px] font-medium">
+                      📁 {jumpBookmark.category}
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                    {jumpBookmark.title}
+                  </p>
+                  {jumpBookmark.tags && jumpBookmark.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-0.5">
+                      {jumpBookmark.tags.map((tag) => (
+                        <span key={tag} className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-            {/* Direct Number Input */}
-            <div className="space-y-1.5 pt-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                원하는 순서 번호 입력 (1 ~ {bookmarks.length})
-              </label>
-              <div className="flex items-center gap-2">
+              {/* Quick Presets */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleMoveToTop(jumpBookmark.id);
+                    setJumpBookmark(null);
+                  }}
+                  className="px-2.5 py-2 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold transition flex flex-col items-center justify-center gap-0.5 cursor-pointer text-center"
+                  title={topBm ? `1번 영상: ${topBm.title}` : ''}
+                >
+                  <span>🔝 맨 위로 (1번)</span>
+                  {topBm && topBm.id !== jumpBookmark.id && (
+                    <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-normal truncate max-w-[110px]">
+                      '{topBm.title}'
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleMoveToBottom(jumpBookmark.id);
+                    setJumpBookmark(null);
+                  }}
+                  className="px-2.5 py-2 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold transition flex flex-col items-center justify-center gap-0.5 cursor-pointer text-center"
+                  title={bottomBm ? `${bookmarks.length}번 영상: ${bottomBm.title}` : ''}
+                >
+                  <span>🔚 맨 아래로 ({bookmarks.length}번)</span>
+                  {bottomBm && bottomBm.id !== jumpBookmark.id && (
+                    <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-normal truncate max-w-[110px]">
+                      '{bottomBm.title}'
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Direct Number Input & Target Preview */}
+              <div className="space-y-2.5 pt-1 border-t border-slate-100 dark:border-slate-800">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  목표 위치 번호 입력 (1 ~ {bookmarks.length})
+                </label>
                 <input
                   type="number"
                   min={1}
@@ -942,20 +1014,210 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                   onChange={(e) => setJumpInputPos(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      handleExecuteJump();
+                      handleExecuteJump('swap');
                     }
                   }}
-                  className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100"
-                  placeholder="예: 1"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100"
+                  placeholder="예: 7"
                 />
-                <button
-                  type="button"
-                  onClick={handleExecuteJump}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition shadow-md shadow-indigo-600/20 cursor-pointer"
-                >
-                  이동하기
-                </button>
+
+                {/* Target Video Preview Info */}
+                {targetBm && targetBm.id !== jumpBookmark.id ? (
+                  <div className="p-2.5 bg-indigo-50/80 dark:bg-indigo-950/60 rounded-xl border border-indigo-200/80 dark:border-indigo-800 flex items-center gap-2.5">
+                    {targetBm.thumbnailUrl || (targetBm.platform === 'youtube' && targetBm.embedId) ? (
+                      <img
+                        src={
+                          targetBm.thumbnailUrl ||
+                          `https://img.youtube.com/vi/${targetBm.embedId}/hqdefault.jpg`
+                        }
+                        alt=""
+                        className="w-12 h-9 rounded-md object-cover border border-indigo-200 dark:border-indigo-800 shrink-0 bg-slate-900"
+                      />
+                    ) : (
+                      <div className="w-12 h-9 rounded-md bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
+                        <Video className="w-4 h-4 text-slate-400" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400">
+                          목표 위치 <span className="font-black">#{targetNum}번</span> 영상 정보
+                        </span>
+                        <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                          targetBm.platform === 'youtube'
+                            ? 'bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400'
+                            : 'bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400'
+                        }`}>
+                          {targetBm.platform === 'youtube' ? 'YouTube' : 'Twitter'}
+                        </span>
+                        <span className="px-1.5 py-0.2 bg-indigo-100/80 dark:bg-indigo-900/80 text-indigo-800 dark:text-indigo-200 rounded text-[10px] font-medium">
+                          📁 {targetBm.category}
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                        {targetBm.title}
+                      </p>
+                      {targetBm.tags && targetBm.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-0.5">
+                          {targetBm.tags.map((tag) => (
+                            <span key={tag} className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : targetBm && targetBm.id === jumpBookmark.id ? (
+                  <p className="text-[11px] text-slate-400 text-center italic py-0.5">
+                    현재 선택한 영상의 위치입니다.
+                  </p>
+                ) : null}
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleExecuteJump('swap')}
+                    disabled={!targetBm || targetBm.id === jumpBookmark.id}
+                    className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold rounded-xl text-xs transition shadow-md shadow-indigo-600/20 cursor-pointer text-center"
+                  >
+                    🔄 #{targetNum || '?'}번 영상과 스왑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleExecuteJump('insert')}
+                    disabled={!targetBm}
+                    className="px-3 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition cursor-pointer text-center"
+                  >
+                    📥 #{targetNum || '?'}번 위치로 끼워넣기
+                  </button>
+                </div>
               </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Quick Reorder Manager Modal */}
+      {isReorderManagerOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div>
+                <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-base flex items-center gap-2">
+                  <ArrowUpDown className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  전체 북마크 순서 관리
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  버튼 하나로 자리를 스왑하거나 원하는 번호로 빠르게 이동하세요.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsReorderManagerOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* List */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              {bookmarks.map((bm, idx) => (
+                <div
+                  key={bm.id}
+                  className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700/70 rounded-xl gap-2"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <span className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-black flex items-center justify-center shrink-0 font-mono">
+                      #{idx + 1}
+                    </span>
+                    {bm.thumbnailUrl || (bm.platform === 'youtube' && bm.embedId) ? (
+                      <img
+                        src={
+                          bm.thumbnailUrl ||
+                          `https://img.youtube.com/vi/${bm.embedId}/hqdefault.jpg`
+                        }
+                        alt=""
+                        className="w-12 h-9 rounded-md object-cover border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-900"
+                      />
+                    ) : (
+                      <div className="w-12 h-9 rounded-md bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
+                        <Video className="w-4 h-4 text-slate-400" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
+                          bm.platform === 'youtube'
+                            ? 'bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400'
+                            : 'bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400'
+                        }`}>
+                          {bm.platform === 'youtube' ? 'YouTube' : 'Twitter'}
+                        </span>
+                        <span className="px-1.5 py-0.2 bg-slate-200/80 dark:bg-slate-700/80 text-slate-700 dark:text-slate-300 rounded text-[9px] font-medium">
+                          📁 {bm.category}
+                        </span>
+                        {bm.tags && bm.tags.length > 0 && (
+                          <span className="text-[9px] text-indigo-600 dark:text-indigo-400 font-medium truncate max-w-[130px]">
+                            #{bm.tags.join(' #')}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                        {bm.title}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => handleMoveUp(bm.id)}
+                      disabled={idx === 0}
+                      className="p-1.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 disabled:opacity-30 rounded-lg transition text-xs font-bold cursor-pointer"
+                      title="위(앞)로 1칸 스왑"
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleMoveDown(bm.id)}
+                      disabled={idx === bookmarks.length - 1}
+                      className="p-1.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 disabled:opacity-30 rounded-lg transition text-xs font-bold cursor-pointer"
+                      title="아래(뒤)로 1칸 스왑"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+
+                    {/* Target Position Dropdown Swap */}
+                    <select
+                      value={idx + 1}
+                      onChange={(e) => {
+                        const targetIndex = parseInt(e.target.value, 10) - 1;
+                        if (!isNaN(targetIndex)) {
+                          handleSwapPositions(idx, targetIndex);
+                        }
+                      }}
+                      className="px-2 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-extrabold text-indigo-600 dark:text-indigo-300 cursor-pointer max-w-[160px] truncate"
+                    >
+                      {bookmarks.map((targetItem, i) => (
+                        <option key={i} value={i + 1}>
+                          #{i + 1}: {targetItem.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <button
+                onClick={() => setIsReorderManagerOpen(false)}
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-600/20 cursor-pointer"
+              >
+                완료
+              </button>
             </div>
           </div>
         </div>
