@@ -87,7 +87,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ bookmark, onClose, onE
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          {isYouTube && (
+          {isYouTube ? (
             <a
               href={`https://www.youtube.com/watch?v=${bookmark.embedId}&t=${activeStart}s`}
               target="_blank"
@@ -97,6 +97,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ bookmark, onClose, onE
             >
               <ExternalLink className="w-3.5 h-3.5" />
               <span>YouTube 새 창에서 시청</span>
+            </a>
+          ) : (
+            <a
+              href={bookmark.url}
+              target="_blank"
+              rel="noreferrer"
+              className="px-2.5 py-1.5 bg-sky-500 hover:bg-sky-400 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm"
+              title="트위터(X) 공식 페이지에서 직접 시청"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>트위터(X) 새 창에서 보기</span>
             </a>
           )}
           <button
@@ -118,27 +129,29 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ bookmark, onClose, onE
       </div>
 
       {/* Main Embed Area */}
-      <div className="p-4 md:p-6 bg-slate-950">
+      <div className="p-4 md:p-5 bg-slate-950">
         {isYouTube ? (
-          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg">
-            <iframe
-              key={playerKey}
-              src={getYouTubeEmbedUrl()}
-              title={bookmark.title}
-              className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
+          <div className="max-w-3xl mx-auto">
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-2xl ring-1 ring-white/10">
+              <iframe
+                key={playerKey}
+                src={getYouTubeEmbedUrl()}
+                title={bookmark.title}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
           </div>
         ) : (
-          <div className="w-full bg-slate-900 rounded-xl p-2 md:p-4">
+          <div className="max-w-xl mx-auto bg-slate-900/90 rounded-xl p-2 md:p-3 ring-1 ring-white/10">
             <TwitterEmbed tweetId={bookmark.embedId} url={bookmark.url} title={bookmark.title} />
           </div>
         )}
 
         {/* Interactive Time Controls */}
         {showTimeControls && (
-          <div className="mt-4 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-white/90">
+          <div className="max-w-3xl mx-auto mt-3.5 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2.5 text-white/90">
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-mono font-medium">
                 <Clock className="w-3.5 h-3.5 text-indigo-400" />
@@ -151,7 +164,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ bookmark, onClose, onE
               {isYouTube && (
                 <button
                   onClick={handleRestartSegment}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition cursor-pointer"
                   title="설정된 시작 구간부터 다시 재생"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-indigo-400" />
@@ -164,82 +177,46 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ bookmark, onClose, onE
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => handleJumpToTime(-10)}
-                  className="px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition"
+                  className="px-2 py-1 bg-slate-800/90 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition cursor-pointer"
                 >
                   -10초
                 </button>
                 <button
                   onClick={() => handleJumpToTime(-5)}
-                  className="px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition"
+                  className="px-2 py-1 bg-slate-800/90 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition cursor-pointer"
                 >
                   -5초
                 </button>
                 <button
                   onClick={() => handleJumpToTime(5)}
-                  className="px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition"
+                  className="px-2 py-1 bg-slate-800/90 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition cursor-pointer"
                 >
                   +5초
                 </button>
                 <button
                   onClick={() => handleJumpToTime(10)}
-                  className="px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition"
+                  className="px-2 py-1 bg-slate-800/90 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition cursor-pointer"
                 >
                   +10초
                 </button>
                 <button
                   onClick={handleCopyTimestampLink}
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                    copied
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                  className={`flex items-center gap-1 px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition cursor-pointer shadow-sm ${
+                    copied ? 'bg-emerald-600' : ''
                   }`}
                 >
                   {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-                  {copied ? '복사 완료' : '구간 링크 복사'}
+                  {copied ? '복사 완료' : '링크 복사'}
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {/* Twitter Embed Guidance Banner if timing set */}
-        {!isYouTube && bookmark.hasVideo && (
-          <div className="mt-3 p-3 bg-sky-950/80 border border-sky-800/80 rounded-xl text-xs text-sky-200 flex items-start gap-2.5">
-            <Twitter className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <span className="font-bold text-sky-300 block">
-                📌 트위터(X) 영상 구간 재생 안내
-              </span>
-              <p className="text-[11px] text-sky-200/90 leading-relaxed">
-                트위터 임베드 위젯 정책상 영상 자동 시간 이동은 지원되지 않습니다. 설정하신 시작 시간 <strong className="text-amber-300 font-mono">[{formatSecondsToHHMMSS(activeStart)}]</strong>을 확인하신 후 트위터 플레이어 하단 타임바를 직접 이동해 보세요.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* YouTube Membership/Private video notice */}
+        {/* Small subtle tip for external/restricted videos */}
         {isYouTube && (
-          <div className="mt-3.5 p-4 bg-red-950/70 border border-red-800/80 rounded-xl text-xs text-red-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
-            <div className="flex items-start gap-2.5">
-              <Tv className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <span className="font-bold text-red-200 block text-xs">
-                  🔒 멤버십 전용 / 로그인 및 외부 재생 제한 동영상 안내
-                </span>
-                <p className="text-[11px] text-red-200/90 leading-relaxed">
-                  유튜브 정책상 <strong className="text-white">멤버십 전용 영상이나 연령/퍼가기 제한 영상</strong>은 외부 임베드 플레이어에서 직접 재생이 차단될 수 있습니다. 아래 버튼을 누르면 설정하신 시작 시간부터 유튜브 새 창에서 자동 재생됩니다.
-                </p>
-              </div>
-            </div>
-            <a
-              href={`https://www.youtube.com/watch?v=${bookmark.embedId}&t=${activeStart}s&autoplay=1`}
-              target="_blank"
-              rel="noreferrer"
-              className="px-3.5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5 shadow-lg shadow-red-900/40 self-end sm:self-center"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>시작 구간부터 새 창 재생 ({formatSecondsToHHMMSS(activeStart)}~)</span>
-            </a>
+          <div className="max-w-3xl mx-auto mt-2 text-center text-[11px] text-slate-400">
+            💡 멤버십/연령제한 영상이 임베드에서 재생되지 않는 경우, 상단의 <strong className="text-slate-300 font-semibold">[YouTube 새 창에서 시청]</strong>을 누르면 지정한 시간부터 시청하실 수 있습니다.
           </div>
         )}
       </div>

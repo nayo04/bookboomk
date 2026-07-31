@@ -1,0 +1,107 @@
+{
+  "entities": {
+    "Bookmark": {
+      "title": "Media Bookmark",
+      "description": "A bookmarked YouTube video segment or Twitter post",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string",
+          "enum": ["youtube", "twitter"]
+        },
+        "url": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "embedId": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "comment": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "tags": {
+          "type": "array"
+        },
+        "startTime": {
+          "type": "number"
+        },
+        "endTime": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "number"
+        },
+        "isFavorite": {
+          "type": "boolean"
+        },
+        "hasVideo": {
+          "type": "boolean"
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "authorAvatarUrl": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "required": ["id", "platform", "url", "embedId", "title", "category", "startTime", "createdAt"]
+    },
+    "Category": {
+      "title": "Category List",
+      "description": "User category list",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "categories": {
+          "type": "array"
+        },
+        "updatedAt": {
+          "type": "number"
+        },
+        "userId": {
+          "type": "string"
+        }
+      },
+      "required": ["categories"]
+    }
+  },
+  "firestore": {
+    "/bookmarks/{bookmarkId}": {
+      "schema": {
+        "$ref": "#/entities/Bookmark"
+      },
+      "description": "Media bookmark records"
+    },
+    "/userCategories/{userId}": {
+      "schema": {
+        "$ref": "#/entities/Category"
+      },
+      "description": "Custom categories for user"
+    }
+  }
+}

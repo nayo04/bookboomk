@@ -129,16 +129,16 @@ export function parseMediaUrl(url: string): ParsedMedia {
     };
   }
 
-  // 2. Twitter / X check
-  const twRegex = /(?:twitter\.com|x\.com)\/(?:[a-zA-Z0-9_]+)\/status\/([0-9]+)/;
+  // 2. Twitter / X check (supports twitter.com, x.com, mobile domains, with or without username)
+  const twRegex = /(?:twitter\.com|x\.com|mobile\.twitter\.com|mobile\.x\.com)\/(?:[a-zA-Z0-9_]+\/)?(?:status|statuses)\/([0-9]+)/i;
   const twMatch = cleanUrl.match(twRegex);
 
   if (twMatch && twMatch[1]) {
     const tweetId = twMatch[1];
 
     // Extract handle if available
-    const handleMatch = cleanUrl.match(/(?:twitter\.com|x\.com)\/([a-zA-Z0-9_]+)\/status/);
-    const handle = handleMatch ? `@${handleMatch[1]}` : '@twitter';
+    const handleMatch = cleanUrl.match(/(?:twitter\.com|x\.com|mobile\.twitter\.com|mobile\.x\.com)\/([a-zA-Z0-9_]+)\/status/i);
+    const handle = handleMatch && handleMatch[1] !== 'i' ? `@${handleMatch[1]}` : '@twitter';
 
     return {
       platform: 'twitter',
@@ -196,10 +196,10 @@ export const DEFAULT_BOOKMARKS: MediaBookmark[] = [
   {
     id: 'bm-sample-3',
     platform: 'twitter',
-    url: 'https://x.com/NASA/status/1815000000000000000',
-    embedId: '1815000000000000000',
-    title: 'NASA 우주 탐사 미션 동영상 소식',
-    comment: '00:00:15초부터 영상 하이라이트가 시작되는 트위터 미디어 비디오 스레드입니다.',
+    url: 'https://x.com/NASA/status/1650532292375830528',
+    embedId: '1650532292375830528',
+    title: 'NASA 우주 탐사 미션 및 기후 변화 발표',
+    comment: '영상 하이라이트와 탐사 정보가 담긴 공식 트위터 미디어 비디오 게시글입니다.',
     category: '뉴스/정보',
     tags: ['우주', 'NASA', '과학'],
     startTime: 15,
@@ -213,10 +213,10 @@ export const DEFAULT_BOOKMARKS: MediaBookmark[] = [
   {
     id: 'bm-sample-4',
     platform: 'twitter',
-    url: 'https://x.com/OpenAI/status/1800000000000000000',
-    embedId: '1800000000000000000',
-    title: '인공지능 연구 발표 텍스트 글 스레드',
-    comment: '영상 없이 글만 수록된 트위터 아티클 게시글입니다. 게시자 프로필 사진이 썸네일로 표시됩니다.',
+    url: 'https://x.com/OpenAI/status/1725597968987152643',
+    embedId: '1725597968987152643',
+    title: 'OpenAI 주요 인공지능 트윗 아티클',
+    comment: '인공지능 모델 및 최신 소식이 수록된 공식 트위터 게시글입니다. 클릭 시 대화형 스레드를 확인할 수 있습니다.',
     category: '개발/IT',
     tags: ['AI', 'OpenAI', 'IT'],
     startTime: 0,

@@ -13,7 +13,31 @@ export function loadBookmarks(): MediaBookmark[] {
     }
     const parsed = JSON.parse(data);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
+      // Fix stale dummy sample tweet IDs if present
+      let migrated = false;
+      const updated = parsed.map((item: MediaBookmark) => {
+        if (item.embedId === '1815000000000000000') {
+          migrated = true;
+          return {
+            ...item,
+            embedId: '1650532292375830528',
+            url: 'https://x.com/NASA/status/1650532292375830528',
+          };
+        }
+        if (item.embedId === '1800000000000000000') {
+          migrated = true;
+          return {
+            ...item,
+            embedId: '1725597968987152643',
+            url: 'https://x.com/OpenAI/status/1725597968987152643',
+          };
+        }
+        return item;
+      });
+      if (migrated) {
+        saveBookmarks(updated);
+      }
+      return updated;
     }
     return DEFAULT_BOOKMARKS;
   } catch (err) {

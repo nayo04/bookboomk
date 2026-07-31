@@ -232,13 +232,23 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
                 <Play className="w-3 h-3 fill-current" />
                 재생
               </button>
-              {isYouTube && (
+              {isYouTube ? (
                 <a
                   href={`https://www.youtube.com/watch?v=${bookmark.embedId}&t=${bookmark.startTime || 0}s&autoplay=1`}
                   target="_blank"
                   rel="noreferrer"
                   className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition"
                   title="유튜브 새 창에서 시작 시간부터 자동 재생"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              ) : (
+                <a
+                  href={bookmark.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-1.5 text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded-lg transition"
+                  title="트위터(X)에서 직접 보기"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
@@ -402,13 +412,23 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
             >
               재생
             </button>
-            {isYouTube && (
+            {isYouTube ? (
               <a
                 href={`https://www.youtube.com/watch?v=${bookmark.embedId}&t=${bookmark.startTime || 0}s&autoplay=1`}
                 target="_blank"
                 rel="noreferrer"
                 className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition"
                 title="유튜브 새 창에서 시작 시간부터 자동 재생"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            ) : (
+              <a
+                href={bookmark.url}
+                target="_blank"
+                rel="noreferrer"
+                className="p-1 text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded transition"
+                title="트위터(X)에서 직접 보기"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>

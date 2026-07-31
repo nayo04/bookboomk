@@ -57,11 +57,13 @@ export const TwitterEmbed: React.FC<TwitterEmbedProps> = ({ tweetId, url, title 
           setLoading(true);
           setError(false);
 
+          const isDark = document.documentElement.classList.contains('dark');
           window.twttr.widgets
             .createTweet(tweetId, containerRef.current, {
-              theme: 'light',
+              theme: isDark ? 'dark' : 'light',
               align: 'center',
               conversation: 'none',
+              dnt: true,
             })
             .then((el) => {
               if (isMounted && token === renderTokenRef.current) {
