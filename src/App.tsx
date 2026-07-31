@@ -75,12 +75,13 @@ export default function App() {
       if (currentUser) {
         setUser(currentUser);
       } else {
-        // Automatically login anonymously if not signed in
+        // Try anonymous login silently; if admin-restricted, remain as guest
         try {
           const anonUser = await loginAnonymously();
           setUser(anonUser);
-        } catch (err) {
-          console.error('Firebase Auth failed:', err);
+        } catch {
+          // Anonymous auth disabled in console - continue as guest
+          setUser(null);
         }
       }
     });
@@ -90,8 +91,6 @@ export default function App() {
 
   // Sync real-time bookmarks with Firestore
   useEffect(() => {
-    if (!user) return;
-
     let hasSeeded = false;
 
     const unsubscribe = subscribeToBookmarks(
@@ -112,13 +111,12 @@ export default function App() {
     );
 
     return () => unsubscribe();
-  }, [user]);
+  }, []);
 
   // Sync real-time custom categories with Firestore
   useEffect(() => {
-    if (!user) return;
-
-    const unsubscribe = subscribeToCategories(user.uid, (remoteCategories) => {
+    const categoryUserId = user?.uid || 'guest';
+    const unsubscribe = subscribeToCategories(categoryUserId, (remoteCategories) => {
       if (remoteCategories && remoteCategories.length > 0) {
         setCustomCategories(remoteCategories);
       }

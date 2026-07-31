@@ -103,7 +103,6 @@ export async function loginAnonymously() {
     const result = await signInAnonymously(auth);
     return result.user;
   } catch (err) {
-    console.error('Anonymous login failed:', err);
     throw err;
   }
 }

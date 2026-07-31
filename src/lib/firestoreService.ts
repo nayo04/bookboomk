@@ -57,8 +57,7 @@ export function subscribeToBookmarks(
 
 // Save or update a single bookmark in Firestore
 export async function saveBookmarkToFirestore(bookmark: MediaBookmark): Promise<void> {
-  const currentUid = auth.currentUser?.uid;
-  if (!currentUid) return;
+  const currentUid = auth.currentUser?.uid || 'guest';
 
   const docPath = `${BOOKMARKS_COLLECTION}/${bookmark.id}`;
   try {
@@ -75,8 +74,7 @@ export async function saveBookmarkToFirestore(bookmark: MediaBookmark): Promise<
 
 // Save bulk bookmarks to Firestore (e.g. initial seed or sync)
 export async function seedBookmarksToFirestore(bookmarks: MediaBookmark[]): Promise<void> {
-  const currentUid = auth.currentUser?.uid;
-  if (!currentUid) return;
+  const currentUid = auth.currentUser?.uid || 'guest';
 
   for (const bookmark of bookmarks) {
     try {

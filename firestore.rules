@@ -6,22 +6,17 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
     function isValidId(id) {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
     match /bookmarks/{bookmarkId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isValidId(bookmarkId) && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isSignedIn() && isValidId(bookmarkId) && (resource.data.userId == request.auth.uid || !('userId' in resource.data));
+      allow read: if true;
+      allow create, update, delete: if isValidId(bookmarkId);
     }
 
     match /userCategories/{userId} {
-      allow read, write: if isSignedIn() && isValidId(userId) && userId == request.auth.uid;
+      allow read, write: if isValidId(userId);
     }
   }
 }
