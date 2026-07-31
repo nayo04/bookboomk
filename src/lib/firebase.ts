@@ -79,12 +79,8 @@ export async function testFirestoreConnection() {
   try {
     await getDocFromServer(doc(db, '_connection_test_', 'ping'));
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message.includes('the client is offline')
-    ) {
-      console.error('Please check your Firebase configuration.');
-    }
+    // Gracefully handle offline or network connection ping check
+    console.info('Firestore connection note: operating in client state or checking connection.');
   }
 }
 

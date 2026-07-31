@@ -38,6 +38,7 @@ import {
   Share2,
   BookmarkCheck,
   CloudCheck,
+  X,
 } from 'lucide-react';
 
 export default function App() {
@@ -66,6 +67,7 @@ export default function App() {
   });
 
   const [sortMode, setSortMode] = useState<SortMode>('custom');
+  const [showHeroBanner, setShowHeroBanner] = useState(true);
 
   // Test Firestore Connection and initialize Firebase Auth
   useEffect(() => {
@@ -363,52 +365,57 @@ export default function App() {
         </div>
 
         {/* Hero Quick Banner / Instruction Guide */}
-        {!activeBookmark && (
-          <div className="bg-gradient-to-r from-indigo-900 via-indigo-850 to-slate-900 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden border border-indigo-800/40">
-            <div className="absolute right-[-20px] top-[-20px] opacity-10 pointer-events-none">
-              <Clock className="w-64 h-64 text-indigo-300" />
-            </div>
+        {!activeBookmark && showHeroBanner && (
+    <div className="bg-gradient-to-r from-indigo-900 via-indigo-850 to-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden border border-indigo-800/40">
+      <div className="absolute right-[-20px] top-[-20px] opacity-10 pointer-events-none">
+        <Clock className="w-48 h-48 sm:w-64 sm:h-64 text-indigo-300" />
+      </div>
 
-            <div className="relative z-10 max-w-2xl space-y-3">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/30 border border-indigo-400/30 rounded-full text-xs font-semibold text-indigo-200">
-                <CloudCheck className="w-3.5 h-3.5 text-emerald-400" />
-                Firebase Cloud Firestore 실시간 연동 완료
-              </div>
+      <button
+        onClick={() => setShowHeroBanner(false)}
+        className="absolute top-3 right-3 p-1.5 text-indigo-300 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer z-20"
+        title="배너 닫기"
+      >
+        <X className="w-4 h-4" />
+      </button>
 
-              <h2 className="text-xl md:text-2xl font-extrabold tracking-tight">
-                원하는 유튜브 특정 시간대와 트위터 스레드를 클라우드에 안전하게 보관하세요!
-              </h2>
+      <div className="relative z-10 max-w-2xl space-y-2 sm:space-y-3 pr-6">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-indigo-500/30 border border-indigo-400/30 rounded-full text-[11px] sm:text-xs font-semibold text-indigo-200">
+          <CloudCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <span>Firebase Cloud Firestore 실시간 연동 완료</span>
+        </div>
 
-              <p className="text-xs md:text-sm text-indigo-100/80 leading-relaxed">
-                구간 타임스탬프와 미디어 코멘트가 파이어베이스(Firestore) 클라우드 데이터베이스에 실시간으로 동기화되어 언제 어디서나 안전하게 보관됩니다.
-              </p>
+        <h2 className="text-base sm:text-xl md:text-2xl font-extrabold tracking-tight leading-snug">
+          원하는 유튜브 특정 시간대와 트위터 스레드를 클라우드에 안전하게 보관하세요!
+        </h2>
 
-              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-medium">
-                <button
-                  onClick={() => {
-                    setEditingBookmark(null);
-                    setIsAddModalOpen(true);
-                  }}
-                  className="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  북마크 등록하기
-                </button>
-                <div className="text-[11px] text-indigo-200/80 flex items-center gap-3 ml-2">
-                  <span className="flex items-center gap-1">
-                    <Tv className="w-3.5 h-3.5 text-red-400" /> 유튜브 구간 재생
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Twitter className="w-3.5 h-3.5 text-sky-400" /> 트위터 링크 카드
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <BookmarkCheck className="w-3.5 h-3.5 text-emerald-400" /> 실시간 클라우드 저장
-                  </span>
-                </div>
-              </div>
-            </div>
+        <p className="text-xs sm:text-sm text-indigo-100/80 leading-relaxed hidden sm:block">
+          구간 타임스탬프와 미디어 코멘트가 파이어베이스(Firestore) 클라우드 데이터베이스에 실시간으로 동기화되어 언제 어디서나 안전하게 보관됩니다.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-medium">
+          <button
+            onClick={() => {
+              setEditingBookmark(null);
+              setIsAddModalOpen(true);
+            }}
+            className="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer text-xs"
+          >
+            <Plus className="w-4 h-4" />
+            북마크 등록하기
+          </button>
+          <div className="text-[10px] sm:text-[11px] text-indigo-200/80 flex flex-wrap items-center gap-2 sm:gap-3">
+            <span className="flex items-center gap-1">
+              <Tv className="w-3 h-3 text-red-400" /> 유튜브 구간 재생
+            </span>
+            <span className="flex items-center gap-1">
+              <Twitter className="w-3 h-3 text-sky-400" /> 트위터 링크 카드
+            </span>
           </div>
-        )}
+        </div>
+      </div>
+    </div>
+  )}
 
         {/* Main Bookmarks List Section */}
         <BookmarkList
