@@ -14,7 +14,12 @@ import {
   Twitter,
   MessageSquare,
   Video,
-  ExternalLink
+  ExternalLink,
+  ChevronUp,
+  ChevronDown,
+  ArrowUpToLine,
+  ArrowDownToLine,
+  ArrowUpDown
 } from 'lucide-react';
 
 interface BookmarkCardProps {
@@ -30,6 +35,13 @@ interface BookmarkCardProps {
   onToggleSelect?: (id: string) => void;
   isSelectionMode?: boolean;
   layoutMode?: 'grid' | 'list';
+  currentIndex?: number;
+  totalCount?: number;
+  onMoveUp?: (id: string) => void;
+  onMoveDown?: (id: string) => void;
+  onMoveToTop?: (id: string) => void;
+  onMoveToBottom?: (id: string) => void;
+  onOpenJumpModal?: (bookmark: MediaBookmark) => void;
 }
 
 export const BookmarkCard: React.FC<BookmarkCardProps> = ({
@@ -44,10 +56,20 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
   isSelected = false,
   onToggleSelect,
   layoutMode = 'grid',
+  currentIndex,
+  totalCount,
+  onMoveUp,
+  onMoveDown,
+  onMoveToTop,
+  onMoveToBottom,
+  onOpenJumpModal,
 }) => {
   const isYouTube = bookmark.platform === 'youtube';
   const showTime = isYouTube || bookmark.hasVideo;
   const dragControls = useDragControls();
+
+  const isFirst = currentIndex === 1;
+  const isLast = currentIndex === totalCount;
 
   if (layoutMode === 'grid') {
     return (
@@ -56,21 +78,28 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
         id={bookmark.id}
         dragListener={false}
         dragControls={dragControls}
+        layout
+        whileDrag={{
+          scale: 1.03,
+          zIndex: 50,
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
+        }}
+        transition={{ type: 'spring', stiffness: 350, damping: 25 }}
         className={`group bg-white dark:bg-slate-900 rounded-2xl border ${
           isSelected
             ? 'border-indigo-500 dark:border-indigo-500 ring-2 ring-indigo-500/20'
             : 'border-slate-200/80 dark:border-slate-800'
         } shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between relative h-full`}
       >
-        {/* Top Header Controls: Checkbox, Drag Handle, Platform Badge & Favorite */}
-        <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-1.5">
+        {/* Top Header Controls: Checkbox, Drag Handle, Quick Position Controls & Favorite */}
+        <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-800 gap-1">
+          <div className="flex items-center gap-1 min-w-0 flex-wrap">
             {onToggleSelect && (
               <input
                 type="checkbox"
                 checked={isSelected}
                 onChange={() => onToggleSelect(bookmark.id)}
-                className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer"
+                className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer shrink-0"
               />
             )}
             <div
@@ -79,26 +108,83 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
                   dragControls.start(e);
                 }
               }}
-              className={`p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded touch-none select-none ${
+              className={`p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded touch-none select-none shrink-0 ${
                 isDragEnabled
                   ? 'cursor-grab active:cursor-grabbing text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'
                   : 'opacity-30 cursor-not-allowed'
               }`}
-              title={isDragEnabled ? "이 핸들을 잡고 드래그하여 순서 변경" : "드래그 순서 변경 불가 (기본 정렬 사용)"}
+              title={isDragEnabled ? '핸들을 잡고 드래그하거나 버튼으로 이동' : '드래그 순서 변경 불가'}
             >
               <GripVertical className="w-4 h-4" />
             </div>
 
-            {isYouTube ? (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded text-[10px] sm:text-[11px] font-bold">
-                <Tv className="w-3 h-3" />
-                YouTube
-              </span>
+            {/* Quick Movement Controls when Custom Sort is Active */}
+            {isDragEnabled && currentIndex !== undefined && totalCount !== undefined ? (
+              <div className="flex items-center gap-0.5 bg-indigo-50 dark:bg-indigo-950/60 p-0.5 rounded-lg border border-indigo-100 dark:border-indigo-900/50">
+                <button
+                  type="button"
+                  onClick={() => onOpenJumpModal?.(bookmark)}
+                  className="px-1.5 py-0.5 text-[10px] font-extrabold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 rounded transition flex items-center gap-0.5 cursor-pointer"
+                  title="클릭하여 원하는 위치 번호로 직접 이동"
+                >
+                  <span className="font-mono">#{currentIndex}</span>
+                  <ArrowUpDown className="w-2.5 h-2.5 text-indigo-500" />
+                </button>
+
+                <div className="w-[1px] h-3 bg-indigo-200 dark:bg-indigo-800 mx-0.5" />
+
+                <button
+                  type="button"
+                  onClick={() => onMoveToTop?.(bookmark.id)}
+                  disabled={isFirst}
+                  className="p-0.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-200/60 dark:hover:bg-indigo-800 disabled:opacity-30 disabled:hover:bg-transparent rounded transition cursor-pointer"
+                  title="맨 위로 이동"
+                >
+                  <ArrowUpToLine className="w-3 h-3" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onMoveUp?.(bookmark.id)}
+                  disabled={isFirst}
+                  className="p-0.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-200/60 dark:hover:bg-indigo-800 disabled:opacity-30 disabled:hover:bg-transparent rounded transition cursor-pointer"
+                  title="한 칸 위로/왼쪽으로 이동"
+                >
+                  <ChevronUp className="w-3 h-3" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onMoveDown?.(bookmark.id)}
+                  disabled={isLast}
+                  className="p-0.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-200/60 dark:hover:bg-indigo-800 disabled:opacity-30 disabled:hover:bg-transparent rounded transition cursor-pointer"
+                  title="한 칸 아래로/오른쪽으로 이동"
+                >
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onMoveToBottom?.(bookmark.id)}
+                  disabled={isLast}
+                  className="p-0.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-200/60 dark:hover:bg-indigo-800 disabled:opacity-30 disabled:hover:bg-transparent rounded transition cursor-pointer"
+                  title="맨 아래로 이동"
+                >
+                  <ArrowDownToLine className="w-3 h-3" />
+                </button>
+              </div>
             ) : (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 rounded text-[10px] sm:text-[11px] font-bold">
-                <Twitter className="w-3 h-3" />
-                Twitter
-              </span>
+              isYouTube ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded text-[10px] sm:text-[11px] font-bold">
+                  <Tv className="w-3 h-3" />
+                  YouTube
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 rounded text-[10px] sm:text-[11px] font-bold">
+                  <Twitter className="w-3 h-3" />
+                  Twitter
+                </span>
+              )
             )}
           </div>
 
@@ -290,6 +376,13 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
       id={bookmark.id}
       dragListener={false}
       dragControls={dragControls}
+      layout
+      whileDrag={{
+        scale: 1.02,
+        zIndex: 50,
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
+      }}
+      transition={{ type: 'spring', stiffness: 350, damping: 25 }}
       className={`group bg-white dark:bg-slate-900 rounded-2xl border ${
         isSelected
           ? 'border-indigo-500 dark:border-indigo-500 ring-2 ring-indigo-500/20'
@@ -298,29 +391,81 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
     >
       {/* Checkbox, Drag & Thumbnail */}
       <div className="flex items-center justify-between sm:justify-start px-2.5 py-1.5 sm:py-0 border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 shrink-0 gap-2">
-        {onToggleSelect && (
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={() => onToggleSelect(bookmark.id)}
-            className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer"
-          />
-        )}
+        <div className="flex items-center gap-1.5">
+          {onToggleSelect && (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onToggleSelect(bookmark.id)}
+              className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer"
+            />
+          )}
 
-        <div
-          onPointerDown={(e) => {
-            if (isDragEnabled) {
-              dragControls.start(e);
-            }
-          }}
-          className={`p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded touch-none select-none ${
-            isDragEnabled
-              ? 'cursor-grab active:cursor-grabbing text-indigo-500'
-              : 'opacity-30 cursor-not-allowed'
-          }`}
-          title={isDragEnabled ? "드래그하여 순서 변경" : "드래그 순서 변경 불가"}
-        >
-          <GripVertical className="w-4 h-4" />
+          <div
+            onPointerDown={(e) => {
+              if (isDragEnabled) {
+                dragControls.start(e);
+              }
+            }}
+            className={`p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded touch-none select-none ${
+              isDragEnabled
+                ? 'cursor-grab active:cursor-grabbing text-indigo-500'
+                : 'opacity-30 cursor-not-allowed'
+            }`}
+            title={isDragEnabled ? '드래그하여 순서 변경' : '드래그 순서 변경 불가'}
+          >
+            <GripVertical className="w-4 h-4" />
+          </div>
+
+          {/* List Mode Quick Movement Controls */}
+          {isDragEnabled && currentIndex !== undefined && totalCount !== undefined && (
+            <div className="flex items-center gap-0.5 bg-indigo-50 dark:bg-indigo-950/60 p-0.5 rounded-lg border border-indigo-100 dark:border-indigo-900/50">
+              <button
+                type="button"
+                onClick={() => onOpenJumpModal?.(bookmark)}
+                className="px-1.5 py-0.5 text-[10px] font-extrabold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 rounded transition font-mono cursor-pointer"
+                title="위치 이동"
+              >
+                #{currentIndex}
+              </button>
+              <button
+                type="button"
+                onClick={() => onMoveToTop?.(bookmark.id)}
+                disabled={isFirst}
+                className="p-0.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-200/60 disabled:opacity-30 rounded transition cursor-pointer"
+                title="맨 위로"
+              >
+                <ArrowUpToLine className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onMoveUp?.(bookmark.id)}
+                disabled={isFirst}
+                className="p-0.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-200/60 disabled:opacity-30 rounded transition cursor-pointer"
+                title="위로"
+              >
+                <ChevronUp className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onMoveDown?.(bookmark.id)}
+                disabled={isLast}
+                className="p-0.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-200/60 disabled:opacity-30 rounded transition cursor-pointer"
+                title="아래로"
+              >
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onMoveToBottom?.(bookmark.id)}
+                disabled={isLast}
+                className="p-0.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-200/60 disabled:opacity-30 rounded transition cursor-pointer"
+                title="맨 아래로"
+              >
+                <ArrowDownToLine className="w-3 h-3" />
+              </button>
+            </div>
+          )}
         </div>
 
         <div

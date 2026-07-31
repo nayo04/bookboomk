@@ -81,6 +81,63 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
   const [tagSearchInput, setTagSearchInput] = useState<string>('');
   const [batchNotice, setBatchNotice] = useState<string | null>(null);
 
+  // Jump Modal State
+  const [jumpBookmark, setJumpBookmark] = useState<MediaBookmark | null>(null);
+  const [jumpInputPos, setJumpInputPos] = useState<string>('');
+
+  const handleMoveUp = (id: string) => {
+    const idx = bookmarks.findIndex((b) => b.id === id);
+    if (idx <= 0) return;
+    const newOrder = [...bookmarks];
+    const [removed] = newOrder.splice(idx, 1);
+    newOrder.splice(idx - 1, 0, removed);
+    onReorder(newOrder);
+  };
+
+  const handleMoveDown = (id: string) => {
+    const idx = bookmarks.findIndex((b) => b.id === id);
+    if (idx < 0 || idx >= bookmarks.length - 1) return;
+    const newOrder = [...bookmarks];
+    const [removed] = newOrder.splice(idx, 1);
+    newOrder.splice(idx + 1, 0, removed);
+    onReorder(newOrder);
+  };
+
+  const handleMoveToTop = (id: string) => {
+    const idx = bookmarks.findIndex((b) => b.id === id);
+    if (idx <= 0) return;
+    const newOrder = [...bookmarks];
+    const [removed] = newOrder.splice(idx, 1);
+    newOrder.unshift(removed);
+    onReorder(newOrder);
+  };
+
+  const handleMoveToBottom = (id: string) => {
+    const idx = bookmarks.findIndex((b) => b.id === id);
+    if (idx < 0 || idx >= bookmarks.length - 1) return;
+    const newOrder = [...bookmarks];
+    const [removed] = newOrder.splice(idx, 1);
+    newOrder.push(removed);
+    onReorder(newOrder);
+  };
+
+  const handleExecuteJump = () => {
+    if (!jumpBookmark) return;
+    const targetNum = parseInt(jumpInputPos, 10);
+    if (!isNaN(targetNum) && targetNum >= 1 && targetNum <= bookmarks.length) {
+      const idx = bookmarks.findIndex((b) => b.id === jumpBookmark.id);
+      if (idx >= 0) {
+        const clampedPos = targetNum - 1;
+        const newOrder = [...bookmarks];
+        const [removed] = newOrder.splice(idx, 1);
+        newOrder.splice(clampedPos, 0, removed);
+        onReorder(newOrder);
+      }
+    }
+    setJumpBookmark(null);
+    setJumpInputPos('');
+  };
+
   // Combine categories directly from customCategories state
   const allCategories = Array.from(new Set(['전체', ...customCategories]));
 
@@ -791,10 +848,12 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
               : 'space-y-3 max-w-4xl mx-auto'
           }
         >
-          {displayBookmarks.map((bookmark) => (
+          {displayBookmarks.map((bookmark, index) => (
             <BookmarkCard
               key={bookmark.id}
               bookmark={bookmark}
+              currentIndex={index + 1}
+              totalCount={displayBookmarks.length}
               onPlay={onPlay}
               onEdit={onEdit}
               onDelete={onDelete}
@@ -806,9 +865,100 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
               onToggleSelect={handleToggleSelectBookmark}
               isSelectionMode={selectedBookmarkIds.length > 0}
               layoutMode={layoutMode}
+              onMoveUp={handleMoveUp}
+              onMoveDown={handleMoveDown}
+              onMoveToTop={handleMoveToTop}
+              onMoveToBottom={handleMoveToBottom}
+              onOpenJumpModal={(bm) => {
+                setJumpBookmark(bm);
+                setJumpInputPos(String(index + 1));
+              }}
             />
           ))}
         </Reorder.Group>
+      )}
+
+      {/* Jump To Position Modal */}
+      {jumpBookmark && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2">
+                <ArrowUpDown className="w-4 h-4 text-indigo-500" />
+                북마크 순서 직접 이동
+              </h3>
+              <button
+                onClick={() => setJumpBookmark(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-1">
+                {jumpBookmark.title}
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                현재 위치: <span className="font-extrabold text-indigo-600 dark:text-indigo-400">{bookmarks.findIndex((b) => b.id === jumpBookmark.id) + 1}번</span> (전체 {bookmarks.length}개)
+              </p>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  handleMoveToTop(jumpBookmark.id);
+                  setJumpBookmark(null);
+                }}
+                className="px-3 py-2 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+              >
+                🔝 맨 위로 (1번)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleMoveToBottom(jumpBookmark.id);
+                  setJumpBookmark(null);
+                }}
+                className="px-3 py-2 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+              >
+                🔚 맨 아래로 ({bookmarks.length}번)
+              </button>
+            </div>
+
+            {/* Direct Number Input */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                원하는 순서 번호 입력 (1 ~ {bookmarks.length})
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={bookmarks.length}
+                  value={jumpInputPos}
+                  onChange={(e) => setJumpInputPos(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleExecuteJump();
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100"
+                  placeholder="예: 1"
+                />
+                <button
+                  type="button"
+                  onClick={handleExecuteJump}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition shadow-md shadow-indigo-600/20 cursor-pointer"
+                >
+                  이동하기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
