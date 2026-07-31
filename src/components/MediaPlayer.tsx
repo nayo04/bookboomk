@@ -219,25 +219,26 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ bookmark, onClose, onE
 
         {/* YouTube Membership/Private video notice */}
         {isYouTube && (
-          <div className="mt-3 p-3.5 bg-red-950/40 border border-red-900/60 rounded-xl text-xs text-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="mt-3.5 p-4 bg-red-950/70 border border-red-800/80 rounded-xl text-xs text-red-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
             <div className="flex items-start gap-2.5">
               <Tv className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <span className="font-bold text-red-300 block text-xs">
-                  🔒 다른 유튜브 계정 로그인 / 멤버십 영상 안내
+              <div className="space-y-1">
+                <span className="font-bold text-red-200 block text-xs">
+                  🔒 멤버십 전용 / 로그인 및 외부 재생 제한 동영상 안내
                 </span>
                 <p className="text-[11px] text-red-200/90 leading-relaxed">
-                  미디어가 재생되지 않거나 권한 오류가 날 경우, AI Studio 프리뷰의 세션과 로그인된 유튜브 계정이 달라서 발생할 수 있습니다. 오른쪽 버튼을 눌러 로그인된 계정으로 현재 타임스탬프에서 시청하세요.
+                  유튜브 정책상 <strong className="text-white">멤버십 전용 영상이나 연령/퍼가기 제한 영상</strong>은 외부 임베드 플레이어에서 직접 재생이 차단될 수 있습니다. 아래 버튼을 누르면 설정하신 시작 시간부터 유튜브 새 창에서 자동 재생됩니다.
                 </p>
               </div>
             </div>
             <a
-              href={`https://www.youtube.com/watch?v=${bookmark.embedId}&t=${activeStart}s`}
+              href={`https://www.youtube.com/watch?v=${bookmark.embedId}&t=${activeStart}s&autoplay=1`}
               target="_blank"
               rel="noreferrer"
-              className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold transition shrink-0 flex items-center gap-1 shadow-sm self-end sm:self-center"
+              className="px-3.5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5 shadow-lg shadow-red-900/40 self-end sm:self-center"
             >
-              로그인 계정으로 시청 <ExternalLink className="w-3.5 h-3.5" />
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>시작 구간부터 새 창 재생 ({formatSecondsToHHMMSS(activeStart)}~)</span>
             </a>
           </div>
         )}

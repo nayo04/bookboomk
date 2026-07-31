@@ -13,7 +13,8 @@ import {
   Tv,
   Twitter,
   MessageSquare,
-  Video
+  Video,
+  ExternalLink
 } from 'lucide-react';
 
 interface BookmarkCardProps {
@@ -231,6 +232,17 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
                 <Play className="w-3 h-3 fill-current" />
                 재생
               </button>
+              {isYouTube && (
+                <a
+                  href={`https://www.youtube.com/watch?v=${bookmark.embedId}&t=${bookmark.startTime || 0}s&autoplay=1`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition"
+                  title="유튜브 새 창에서 시작 시간부터 자동 재생"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
               <button
                 onClick={() => onEdit(bookmark)}
                 className="p-1 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition"
@@ -390,6 +402,17 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
             >
               재생
             </button>
+            {isYouTube && (
+              <a
+                href={`https://www.youtube.com/watch?v=${bookmark.embedId}&t=${bookmark.startTime || 0}s&autoplay=1`}
+                target="_blank"
+                rel="noreferrer"
+                className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition"
+                title="유튜브 새 창에서 시작 시간부터 자동 재생"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
             <button
               onClick={() => onEdit(bookmark)}
               className="p-1 text-slate-500 hover:text-indigo-600 rounded"

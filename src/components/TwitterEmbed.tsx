@@ -10,7 +10,8 @@ interface TwitterEmbedProps {
 declare global {
   interface Window {
     twttr?: {
-      widgets: {
+      ready?: (callback: (twttr: any) => void) => void;
+      widgets?: {
         createTweet: (
           tweetId: string,
           targetEl: HTMLElement,
@@ -32,42 +33,72 @@ export const TwitterEmbed: React.FC<TwitterEmbedProps> = ({ tweetId, url, title 
     const token = ++renderTokenRef.current;
 
     const renderTweet = () => {
-      if (!containerRef.current || !window.twttr) return;
+      if (!containerRef.current) return;
 
-      containerRef.current.innerHTML = '';
-      setLoading(true);
-      setError(false);
-
-      window.twttr.widgets
-        .createTweet(tweetId, containerRef.current, {
-          theme: 'light',
-          align: 'center',
-          conversation: 'none',
-        })
-        .then((el) => {
-          if (isMounted && token === renderTokenRef.current) {
-            setLoading(false);
-            if (containerRef.current && containerRef.current.children.length > 1) {
-              // Remove any extra duplicate tweet nodes created by race conditions
-              while (containerRef.current.children.length > 1) {
-                containerRef.current.removeChild(containerRef.current.lastChild!);
-              }
-            }
-            if (!el) {
-              setError(true);
-            }
-          }
-        })
-        .catch(() => {
+      try {
+        if (!window.twttr) {
           if (isMounted && token === renderTokenRef.current) {
             setError(true);
             setLoading(false);
           }
-        });
+          return;
+        }
+
+        const create = () => {
+          if (!containerRef.current || !window.twttr?.widgets?.createTweet) {
+            if (isMounted && token === renderTokenRef.current) {
+              setError(true);
+              setLoading(false);
+            }
+            return;
+          }
+
+          containerRef.current.innerHTML = '';
+          setLoading(true);
+          setError(false);
+
+          window.twttr.widgets
+            .createTweet(tweetId, containerRef.current, {
+              theme: 'light',
+              align: 'center',
+              conversation: 'none',
+            })
+            .then((el) => {
+              if (isMounted && token === renderTokenRef.current) {
+                setLoading(false);
+                if (containerRef.current && containerRef.current.children.length > 1) {
+                  while (containerRef.current.children.length > 1) {
+                    containerRef.current.removeChild(containerRef.current.lastChild!);
+                  }
+                }
+                if (!el) {
+                  setError(true);
+                }
+              }
+            })
+            .catch(() => {
+              if (isMounted && token === renderTokenRef.current) {
+                setError(true);
+                setLoading(false);
+              }
+            });
+        };
+
+        if (typeof window.twttr.ready === 'function') {
+          window.twttr.ready(() => create());
+        } else {
+          create();
+        }
+      } catch {
+        if (isMounted && token === renderTokenRef.current) {
+          setError(true);
+          setLoading(false);
+        }
+      }
     };
 
     const loadTwitterScript = () => {
-      if (window.twttr) {
+      if (window.twttr?.widgets?.createTweet) {
         renderTweet();
         return;
       }
@@ -89,16 +120,29 @@ export const TwitterEmbed: React.FC<TwitterEmbedProps> = ({ tweetId, url, title 
         };
         document.body.appendChild(script);
       } else {
+        let attempts = 0;
         const interval = setInterval(() => {
-          if (window.twttr) {
+          attempts++;
+          if (window.twttr?.widgets?.createTweet) {
             clearInterval(interval);
             if (isMounted) renderTweet();
+          } else if (attempts > 25) {
+            clearInterval(interval);
+            if (isMounted) {
+              setError(true);
+              setLoading(false);
+            }
           }
         }, 200);
       }
     };
 
-    loadTwitterScript();
+    try {
+      loadTwitterScript();
+    } catch {
+      setError(true);
+      setLoading(false);
+    }
 
     return () => {
       isMounted = false;

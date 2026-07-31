@@ -79,6 +79,7 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
   const [selectedBookmarkIds, setSelectedBookmarkIds] = useState<string[]>([]);
   const [batchTargetCategory, setBatchTargetCategory] = useState<string>('');
   const [tagSearchInput, setTagSearchInput] = useState<string>('');
+  const [batchNotice, setBatchNotice] = useState<string | null>(null);
 
   // Combine categories directly from customCategories state
   const allCategories = Array.from(new Set(['전체', ...customCategories]));
@@ -205,16 +206,18 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
   // Batch Category change submission
   const handleApplyBatchCategory = () => {
     if (!batchTargetCategory) {
-      alert('이동할 카테고리를 선택해 주세요.');
+      setBatchNotice('이동할 카테고리를 선택해 주세요.');
+      setTimeout(() => setBatchNotice(null), 3000);
       return;
     }
     if (selectedBookmarkIds.length === 0) return;
 
     if (onBatchChangeCategory) {
       onBatchChangeCategory(selectedBookmarkIds, batchTargetCategory);
-      alert(`선택한 ${selectedBookmarkIds.length}개 북마크의 카테고리가 '${batchTargetCategory}'(으)로 일괄 변경되었습니다.`);
+      setBatchNotice(`선택한 ${selectedBookmarkIds.length}개 북마크가 '${batchTargetCategory}' 카테고리로 이동되었습니다.`);
       setSelectedBookmarkIds([]);
       setBatchTargetCategory('');
+      setTimeout(() => setBatchNotice(null), 3000);
     }
   };
 
@@ -658,6 +661,16 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
           </div>
         )}
       </div>
+
+      {/* Batch Notice Toast */}
+      {batchNotice && (
+        <div className="p-3 bg-indigo-600 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-between">
+          <span>{batchNotice}</span>
+          <button onClick={() => setBatchNotice(null)} className="p-0.5 hover:bg-black/10 rounded">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Batch Selection Action Bar */}
       {displayBookmarks.length > 0 && (

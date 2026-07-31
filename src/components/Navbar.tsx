@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { MediaBookmark } from '../types';
 import { exportBookmarksAsJSON } from '../utils/storage';
 import {
@@ -24,6 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onImportBookmarks,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importNotice, setImportNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const youtubeCount = bookmarks.filter((b) => b.platform === 'youtube').length;
   const twitterCount = bookmarks.filter((b) => b.platform === 'twitter').length;
@@ -38,13 +39,31 @@ export const Navbar: React.FC<NavbarProps> = ({
         const json = JSON.parse(event.target?.result as string);
         if (Array.isArray(json)) {
           onImportBookmarks(json);
-          alert(`성공적으로 ${json.length}개의 북마크를 가져왔습니다.`);
+          setImportNotice({
+            type: 'success',
+            text: `성공적으로 ${json.length}개의 북마크를 가져왔습니다.`,
+          });
+          setTimeout(() => setImportNotice(null), 4000);
+        } else {
+          setImportNotice({
+            type: 'error',
+            text: '올바른 JSON 배열 형식이 아닙니다.',
+          });
+          setTimeout(() => setImportNotice(null), 4000);
         }
       } catch {
-        alert('올바른 JSON 백업 파일이 아닙니다.');
+        setImportNotice({
+          type: 'error',
+          text: '올바른 JSON 백업 파일이 아닙니다.',
+        });
+        setTimeout(() => setImportNotice(null), 4000);
       }
     };
     reader.readAsText(file);
+    // Reset file input value so same file can be chosen again if needed
+    if (e.target) {
+      e.target.value = '';
+    }
   };
 
   return (
@@ -125,6 +144,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
       </div>
+
+      {importNotice && (
+        <div
+          className={`px-4 py-2 text-xs font-bold text-center border-t transition ${
+            importNotice.type === 'success'
+              ? 'bg-emerald-500 text-white border-emerald-600'
+              : 'bg-red-500 text-white border-red-600'
+          }`}
+        >
+          {importNotice.text}
+        </div>
+      )}
     </header>
   );
 };

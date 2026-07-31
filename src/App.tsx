@@ -10,6 +10,7 @@ import { Navbar } from './components/Navbar';
 import { BookmarkList } from './components/BookmarkList';
 import { MediaPlayer } from './components/MediaPlayer';
 import { AddBookmarkModal } from './components/AddBookmarkModal';
+import { ConfirmModal } from './components/ConfirmModal';
 import {
   Clock,
   Tv,
@@ -29,6 +30,10 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<MediaBookmark | null>(null);
   const [customCategories, setCustomCategories] = useState<string[]>(() => loadCustomCategories());
+
+  // Confirm delete modal states
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [batchDeleteIds, setBatchDeleteIds] = useState<string[] | null>(null);
 
   const playerRef = useRef<HTMLDivElement>(null);
 
@@ -87,7 +92,7 @@ export default function App() {
       // Create new
       const newBookmark: MediaBookmark = {
         ...bookmarkData,
-        id: `bm-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        id: `bm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         createdAt: Date.now(),
         isFavorite: false,
       };
@@ -99,12 +104,17 @@ export default function App() {
 
   // Handle Delete
   const handleDeleteBookmark = (id: string) => {
-    if (window.confirm('이 미디어 북마크를 삭제하시겠습니까?')) {
-      setBookmarks((prev) => prev.filter((b) => b.id !== id));
-      if (activeBookmark?.id === id) {
-        setActiveBookmark(null);
-      }
+    setDeleteTargetId(id);
+  };
+
+  const confirmDeleteSingle = () => {
+    if (!deleteTargetId) return;
+    const id = deleteTargetId;
+    setBookmarks((prev) => prev.filter((b) => b.id !== id));
+    if (activeBookmark?.id === id) {
+      setActiveBookmark(null);
     }
+    setDeleteTargetId(null);
   };
 
   // Handle Toggle Favorite
@@ -178,12 +188,17 @@ export default function App() {
   // Handle Batch Delete
   const handleBatchDeleteBookmarks = (bookmarkIds: string[]) => {
     if (!bookmarkIds || bookmarkIds.length === 0) return;
-    if (window.confirm(`선택한 ${bookmarkIds.length}개의 북마크를 정말 삭제하시겠습니까?`)) {
-      setBookmarks((prev) => prev.filter((b) => !bookmarkIds.includes(b.id)));
-      if (activeBookmark && bookmarkIds.includes(activeBookmark.id)) {
-        setActiveBookmark(null);
-      }
+    setBatchDeleteIds(bookmarkIds);
+  };
+
+  const confirmBatchDelete = () => {
+    if (!batchDeleteIds || batchDeleteIds.length === 0) return;
+    const ids = batchDeleteIds;
+    setBookmarks((prev) => prev.filter((b) => !ids.includes(b.id)));
+    if (activeBookmark && ids.includes(activeBookmark.id)) {
+      setActiveBookmark(null);
     }
+    setBatchDeleteIds(null);
   };
 
   // Handle Import JSON
@@ -327,6 +342,30 @@ export default function App() {
         onAddCustomCategory={handleAddCustomCategory}
         onRenameCategory={handleRenameCategory}
         onDeleteCategory={handleDeleteCategory}
+      />
+
+      {/* Delete Single Bookmark Confirm Modal */}
+      <ConfirmModal
+        isOpen={deleteTargetId !== null}
+        title="북마크 삭제"
+        message="선택한 미디어 북마크를 정말 삭제하시겠습니까?"
+        confirmText="삭제하기"
+        cancelText="취소"
+        type="danger"
+        onConfirm={confirmDeleteSingle}
+        onClose={() => setDeleteTargetId(null)}
+      />
+
+      {/* Delete Batch Bookmarks Confirm Modal */}
+      <ConfirmModal
+        isOpen={batchDeleteIds !== null}
+        title="선택 항목 일괄 삭제"
+        message={`선택한 ${batchDeleteIds?.length || 0}개의 북마크를 정말 삭제하시겠습니까?`}
+        confirmText="일괄 삭제"
+        cancelText="취소"
+        type="danger"
+        onConfirm={confirmBatchDelete}
+        onClose={() => setBatchDeleteIds(null)}
       />
     </div>
   );

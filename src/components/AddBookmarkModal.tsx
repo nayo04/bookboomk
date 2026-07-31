@@ -120,13 +120,16 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
   customCategories,
   onAddCustomCategory,
 }) => {
+  const activeCategories = customCategories.filter((c) => c !== '전체');
+  const availableCategories = activeCategories.length > 0 ? activeCategories : ['기타'];
+
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [startSec, setStartSec] = useState(0);
   const [hasEndSec, setHasEndSec] = useState(false);
   const [endSec, setEndSec] = useState(0);
 
-  const [category, setCategory] = useState(PRESET_CATEGORIES[1]);
+  const [category, setCategory] = useState(availableCategories[0] || '기타');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [comment, setComment] = useState('');
@@ -153,7 +156,11 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
         setEndSec(0);
       }
 
-      setCategory(editingBookmark.category);
+      if (availableCategories.includes(editingBookmark.category)) {
+        setCategory(editingBookmark.category);
+      } else {
+        setCategory(availableCategories[0] || '기타');
+      }
       setTags(editingBookmark.tags || []);
       setTagInput('');
       setComment(editingBookmark.comment || '');
@@ -170,7 +177,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
     setStartSec(0);
     setHasEndSec(false);
     setEndSec(0);
-    setCategory(PRESET_CATEGORIES[1]);
+    setCategory(availableCategories[0] || '기타');
     setTags([]);
     setTagInput('');
     setComment('');
@@ -269,9 +276,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
     onClose();
   };
 
-  const allCategories = Array.from(
-    new Set([...PRESET_CATEGORIES.filter((c) => c !== '전체'), ...customCategories])
-  );
+  const allCategories = availableCategories;
 
   if (!isOpen) return null;
 
