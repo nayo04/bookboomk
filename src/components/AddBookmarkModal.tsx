@@ -22,7 +22,8 @@ import {
   FileCode2,
   Tag,
   Trash2,
-  Edit3
+  Edit3,
+  Repeat
 } from 'lucide-react';
 
 interface AddBookmarkModalProps {
@@ -128,6 +129,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
   const [startSec, setStartSec] = useState(0);
   const [hasEndSec, setHasEndSec] = useState(false);
   const [endSec, setEndSec] = useState(0);
+  const [isLooping, setIsLooping] = useState(false);
 
   const [category, setCategory] = useState(availableCategories[0] || '기타');
   const [tags, setTags] = useState<string[]>([]);
@@ -147,6 +149,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
       setUrl(editingBookmark.url);
       setTitle(editingBookmark.title);
       setStartSec(editingBookmark.startTime || 0);
+      setIsLooping(editingBookmark.isLooping ?? false);
 
       if (editingBookmark.endTime !== null && editingBookmark.endTime !== undefined) {
         setHasEndSec(true);
@@ -177,6 +180,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
     setStartSec(0);
     setHasEndSec(false);
     setEndSec(0);
+    setIsLooping(false);
     setCategory(availableCategories[0] || '기타');
     setTags([]);
     setTagInput('');
@@ -269,6 +273,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
       tags: tags,
       startTime: parsed.platform === 'youtube' || hasVideo ? startSec : 0,
       endTime: parsed.platform === 'youtube' || hasVideo ? finalEndSec : null,
+      isLooping: parsed.platform === 'youtube' || hasVideo ? isLooping : false,
       hasVideo: parsed.platform === 'youtube' ? true : hasVideo,
       thumbnailUrl: parsed.thumbnailUrl,
     });
@@ -399,6 +404,16 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
                 <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-indigo-500" />
                   재생 구간 설정 (시 : 분 : 초)
+                </label>
+                <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800 transition hover:bg-indigo-100">
+                  <input
+                    type="checkbox"
+                    checked={isLooping}
+                    onChange={(e) => setIsLooping(e.target.checked)}
+                    className="rounded text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <Repeat className="w-3.5 h-3.5" />
+                  <span>구간 연속 반복 재생 (Loop)</span>
                 </label>
               </div>
 

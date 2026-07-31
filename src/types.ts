@@ -17,6 +17,7 @@ export interface MediaBookmark {
   author?: string;
   authorAvatarUrl?: string; // Profile picture for text-only tweets
   thumbnailUrl?: string;
+  isLooping?: boolean; // 구간 연속 반복 재생
 }
 
 export type SortMode = 'custom' | 'newest' | 'oldest' | 'title';

@@ -43,12 +43,13 @@ export function subscribeToBookmarks(
           author: data.author || '',
           authorAvatarUrl: data.authorAvatarUrl || '',
           thumbnailUrl: data.thumbnailUrl || '',
+          isLooping: data.isLooping !== undefined ? Boolean(data.isLooping) : false,
         };
       });
       onUpdate(items);
     },
     (error) => {
-      console.error('Error fetching bookmarks from Firestore:', error);
+      console.warn('Error fetching bookmarks from Firestore (falling back to LocalStorage):', error);
       if (onError) onError(error);
       handleFirestoreError(error, OperationType.LIST, BOOKMARKS_COLLECTION);
     }
@@ -68,6 +69,7 @@ export async function saveBookmarkToFirestore(bookmark: MediaBookmark): Promise<
     };
     await setDoc(docRef, dataToSave, { merge: true });
   } catch (error) {
+    console.warn('Failed to save bookmark to Firestore (falling back to LocalStorage):', error);
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
 }
@@ -93,6 +95,7 @@ export async function deleteBookmarkFromFirestore(id: string): Promise<void> {
     const docRef = doc(db, BOOKMARKS_COLLECTION, id);
     await deleteDoc(docRef);
   } catch (error) {
+    console.warn('Failed to delete bookmark from Firestore (falling back to LocalStorage):', error);
     handleFirestoreError(error, OperationType.DELETE, docPath);
   }
 }
@@ -116,7 +119,7 @@ export function subscribeToCategories(
       }
     },
     (error) => {
-      console.error('Error fetching user categories:', error);
+      console.warn('Error fetching user categories from Firestore (falling back to LocalStorage):', error);
       handleFirestoreError(error, OperationType.GET, docPath);
     }
   );
@@ -136,6 +139,7 @@ export async function saveCategoriesToFirestore(
       userId,
     });
   } catch (error) {
+    console.warn('Failed to save categories to Firestore (falling back to LocalStorage):', error);
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
 }

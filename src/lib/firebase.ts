@@ -94,8 +94,14 @@ export function handleFirestoreError(
   operationType: OperationType,
   path: string | null
 ) {
+  const errStr = error instanceof Error ? error.message : String(error);
+  const isQuotaError =
+    errStr.includes('resource-exhausted') ||
+    errStr.includes('Quota limit exceeded') ||
+    errStr.includes('quota');
+
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errStr,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -111,8 +117,13 @@ export function handleFirestoreError(
     operationType,
     path,
   };
+
+  if (isQuotaError) {
+    console.warn('Firestore quota limit reached. Operating seamlessly in LocalStorage mode.');
+    return;
+  }
+
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
 }
 
 export async function testFirestoreConnection() {

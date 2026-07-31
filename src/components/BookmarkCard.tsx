@@ -20,6 +20,7 @@ import {
   ChevronUp,
   ChevronDown,
   ArrowUpDown,
+  Repeat
 } from 'lucide-react';
 
 interface BookmarkCardProps {
@@ -255,6 +256,9 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 rounded-md text-[10px] sm:text-[11px] font-mono font-semibold shrink-0">
                   <Clock className="w-3 h-3 text-indigo-500" />
                   {formatSecondsToHHMMSS(bookmark.startTime)}
+                  {bookmark.isLooping && (
+                    <Repeat className="w-3 h-3 text-emerald-500 ml-0.5" title="구간 연속 반복 재생" />
+                  )}
                 </span>
               )}
             </div>

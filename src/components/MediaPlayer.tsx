@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MediaBookmark } from '../types';
 import { formatSecondsToHHMMSS } from '../utils/mediaUtils';
 import { TwitterEmbed } from './TwitterEmbed';
@@ -13,7 +13,8 @@ import {
   Edit2,
   Tv,
   Twitter,
-  Video
+  Video,
+  Repeat
 } from 'lucide-react';
 
 interface MediaPlayerProps {
@@ -26,6 +27,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ bookmark, onClose, onE
   const [copied, setCopied] = useState(false);
   const [playerKey, setPlayerKey] = useState(0); // Used to reload iframe on jump
   const [currentStartOffset, setCurrentStartOffset] = useState<number | null>(null);
+  const [isLooping, setIsLooping] = useState<boolean>(bookmark?.isLooping ?? false);
+
+  useEffect(() => {
+    if (bookmark) {
+      setIsLooping(bookmark.isLooping ?? false);
+      setCurrentStartOffset(null);
+    }
+  }, [bookmark?.id]);
 
   if (!bookmark) return null;
 
@@ -33,8 +42,24 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ bookmark, onClose, onE
   const showTimeControls = isYouTube || bookmark.hasVideo;
   const activeStart = currentStartOffset !== null ? currentStartOffset : bookmark.startTime;
 
+  // Auto loop timer for custom start~end range
+  useEffect(() => {
+    if (!isLooping || !bookmark.endTime || bookmark.endTime <= activeStart) return;
+    const durationSec = bookmark.endTime - activeStart;
+    if (durationSec <= 0) return;
+
+    const timer = setTimeout(() => {
+      setPlayerKey((prev) => prev + 1);
+    }, (durationSec + 0.6) * 1000);
+
+    return () => clearTimeout(timer);
+  }, [isLooping, activeStart, bookmark.endTime, playerKey, bookmark.id]);
+
   const getYouTubeEmbedUrl = () => {
     let url = `https://www.youtube.com/embed/${bookmark.embedId}?autoplay=1&enablejsapi=1`;
+    if (isLooping) {
+      url += `&loop=1&playlist=${bookmark.embedId}`;
+    }
     if (activeStart > 0) {
       url += `&start=${activeStart}`;
     }
@@ -152,7 +177,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ bookmark, onClose, onE
         {/* Interactive Time Controls */}
         {showTimeControls && (
           <div className="max-w-3xl mx-auto mt-3.5 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2.5 text-white/90">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-mono font-medium">
                 <Clock className="w-3.5 h-3.5 text-indigo-400" />
                 구간: {formatSecondsToHHMMSS(activeStart)}{' '}
@@ -160,6 +185,21 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ bookmark, onClose, onE
                   ? `~ ${formatSecondsToHHMMSS(bookmark.endTime)}`
                   : '(끝까지)'}
               </span>
+
+              {isYouTube && (
+                <button
+                  onClick={() => setIsLooping(!isLooping)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer border ${
+                    isLooping
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm'
+                      : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border-slate-700/80'
+                  }`}
+                  title="해당 시간대 구간 연속 반복 재생 토글"
+                >
+                  <Repeat className={`w-3.5 h-3.5 ${isLooping ? 'text-emerald-400 animate-spin-slow' : 'text-slate-400'}`} />
+                  <span>{isLooping ? '구간 반복 ON' : '구간 반복 OFF'}</span>
+                </button>
+              )}
 
               {isYouTube && (
                 <button
