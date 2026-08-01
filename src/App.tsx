@@ -67,7 +67,7 @@ export default function App() {
     favoritesOnly: false,
   });
 
-  const [sortMode, setSortMode] = useState<SortMode>('custom');
+  const [sortMode, setSortMode] = useState<SortMode>('newest');
   const [showHeroBanner, setShowHeroBanner] = useState(true);
 
   // Test Firestore Connection and initialize Firebase Auth

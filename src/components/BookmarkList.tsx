@@ -79,10 +79,14 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
   const [layoutMode, setLayoutMode] = useState<'grid' | 'list'>('grid');
 
   // Batch Selection State
+  const [isBatchModeActive, setIsBatchModeActive] = useState<boolean>(false);
   const [selectedBookmarkIds, setSelectedBookmarkIds] = useState<string[]>([]);
   const [batchTargetCategory, setBatchTargetCategory] = useState<string>('');
   const [tagSearchInput, setTagSearchInput] = useState<string>('');
   const [batchNotice, setBatchNotice] = useState<string | null>(null);
+
+  // Drag Banner Dismiss State
+  const [isDragBannerDismissed, setIsDragBannerDismissed] = useState<boolean>(false);
 
   // Jump, Swap & Reorder Manager State
   const [jumpBookmark, setJumpBookmark] = useState<MediaBookmark | null>(null);
@@ -562,9 +566,9 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
           </div>
         )}
 
-        <div className="flex flex-col md:flex-row items-center gap-3">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
           {/* Search Input (Title, Comment & Tags) */}
-          <div className="relative flex-1 w-full">
+          <div className="relative flex-1 w-full min-w-0">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
             <input
               type="text"
@@ -584,7 +588,7 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
           </div>
 
           {/* Controls: Layout Toggle, Platform Filter, Favorites & Sorting */}
-          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto justify-between md:justify-start shrink-0">
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end max-w-full">
             {/* View Layout Mode Switcher (Grid vs List) */}
             <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium shrink-0">
               <button
@@ -649,6 +653,31 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
               </button>
             </div>
 
+            {/* Batch Selection Toggle Button */}
+            <button
+              onClick={() => {
+                const nextState = !isBatchModeActive;
+                setIsBatchModeActive(nextState);
+                if (!nextState) {
+                  setSelectedBookmarkIds([]);
+                }
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition border shrink-0 cursor-pointer ${
+                isBatchModeActive || selectedBookmarkIds.length > 0
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm font-bold'
+                  : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title="북마크 다중 선택 및 일괄 관리"
+            >
+              <CheckSquare className="w-3.5 h-3.5" />
+              <span>다중 선택</span>
+              {selectedBookmarkIds.length > 0 && (
+                <span className="px-1.5 py-0.2 text-[10px] bg-white/20 text-white rounded-full font-extrabold">
+                  {selectedBookmarkIds.length}
+                </span>
+              )}
+            </button>
+
             {/* Favorites Toggle */}
             <button
               onClick={() =>
@@ -665,14 +694,14 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
             </button>
 
             {/* Sorting Dropdown & Order Manager */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+            <div className="flex items-center gap-1.5 shrink-0 max-w-full">
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <select
                 value={sortMode}
                 onChange={(e) => onSortModeChange(e.target.value as SortMode)}
-                className="px-2.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-slate-100"
+                className="px-2.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-slate-100 max-w-full truncate cursor-pointer"
               >
-                <option value="custom">✋ 사용자 순서 (스왑 & 이동)</option>
+                <option value="custom">✋ 사용자 순서</option>
                 <option value="newest">🕒 최신 등록순</option>
                 <option value="oldest">⌛ 오래된순</option>
                 <option value="title">🔤 제목 순</option>
@@ -751,13 +780,13 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
         </div>
       )}
 
-      {/* Batch Selection Action Bar */}
-      {displayBookmarks.length > 0 && (
-        <div className="bg-indigo-950 text-white rounded-2xl p-3.5 shadow-lg border border-indigo-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+      {/* Batch Selection Action Bar - Only shown when batch mode is toggled on or items are selected */}
+      {(isBatchModeActive || selectedBookmarkIds.length > 0) && displayBookmarks.length > 0 && (
+        <div className="bg-indigo-950 text-white rounded-2xl p-3.5 shadow-lg border border-indigo-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in duration-200">
           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
             <button
               onClick={handleToggleSelectAll}
-              className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 bg-indigo-900 hover:bg-indigo-800 text-indigo-200 rounded-xl transition border border-indigo-700/60"
+              className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 bg-indigo-900 hover:bg-indigo-800 text-indigo-200 rounded-xl transition border border-indigo-700/60 cursor-pointer"
             >
               {selectedBookmarkIds.length === displayBookmarks.length && displayBookmarks.length > 0 ? (
                 <CheckSquare className="w-4 h-4 text-indigo-400" />
@@ -777,59 +806,82 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
             </span>
           </div>
 
-          {selectedBookmarkIds.length > 0 && (
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-              <div className="flex items-center gap-1.5">
-                <select
-                  value={batchTargetCategory}
-                  onChange={(e) => setBatchTargetCategory(e.target.value)}
-                  className="px-3 py-1.5 bg-indigo-900 border border-indigo-700 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400 text-white"
-                >
-                  <option value="">-- 카테고리 일괄 선택 --</option>
-                  {manageableCategories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+            {selectedBookmarkIds.length > 0 && (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <select
+                    value={batchTargetCategory}
+                    onChange={(e) => setBatchTargetCategory(e.target.value)}
+                    className="px-3 py-1.5 bg-indigo-900 border border-indigo-700 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400 text-white"
+                  >
+                    <option value="">-- 카테고리 일괄 선택 --</option>
+                    {manageableCategories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
 
-                <button
-                  onClick={handleApplyBatchCategory}
-                  disabled={!batchTargetCategory}
-                  className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white rounded-xl font-bold text-xs transition shadow-xs flex items-center gap-1"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  일괄 이동
-                </button>
-              </div>
+                  <button
+                    onClick={handleApplyBatchCategory}
+                    disabled={!batchTargetCategory}
+                    className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white rounded-xl font-bold text-xs transition shadow-xs flex items-center gap-1 cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    일괄 이동
+                  </button>
+                </div>
 
-              {onBatchDelete && (
-                <button
-                  onClick={() => {
-                    onBatchDelete(selectedBookmarkIds);
-                    setSelectedBookmarkIds([]);
-                  }}
-                  className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-xs transition shadow-xs flex items-center gap-1"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  선택 삭제
-                </button>
-              )}
-            </div>
-          )}
+                {onBatchDelete && (
+                  <button
+                    onClick={() => {
+                      onBatchDelete(selectedBookmarkIds);
+                      setSelectedBookmarkIds([]);
+                    }}
+                    className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-xs transition shadow-xs flex items-center gap-1 cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    선택 삭제
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* Close Batch Mode Button */}
+            <button
+              onClick={() => {
+                setIsBatchModeActive(false);
+                setSelectedBookmarkIds([]);
+              }}
+              className="p-1.5 text-indigo-300 hover:text-white hover:bg-indigo-900 rounded-xl transition cursor-pointer ml-1"
+              title="다중 선택 닫기"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Drag & Drop Instruction Banner */}
-      {isDragEnabled && displayBookmarks.length > 1 && (
-        <div className="px-4 py-2 bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 rounded-xl flex items-center justify-between text-xs text-indigo-700 dark:text-indigo-300">
+      {/* Drag & Drop Instruction Banner - Dismissible */}
+      {isDragEnabled && displayBookmarks.length > 1 && !isDragBannerDismissed && (
+        <div className="px-4 py-2 bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 rounded-xl flex items-center justify-between text-xs text-indigo-700 dark:text-indigo-300 animate-in fade-in duration-200">
           <span className="flex items-center gap-1.5 font-medium">
             <GripVertical className="w-4 h-4 text-indigo-500" />
             핸들을 잡고 드래그하여 순서를 자유롭게 변경하세요.
           </span>
-          <span className="text-[11px] font-bold bg-indigo-100 dark:bg-indigo-900/80 px-2 py-0.5 rounded">
-            순서 변경 가능
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold bg-indigo-100 dark:bg-indigo-900/80 px-2 py-0.5 rounded">
+              순서 변경 가능
+            </span>
+            <button
+              onClick={() => setIsDragBannerDismissed(true)}
+              className="p-1 text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-900 rounded-md transition cursor-pointer"
+              title="안내문 닫기"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 
